@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>soli p5js starter</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+    <!--p5js version 1-->
+    <script src="https://www.gstatic.com/firebasejs/7.15.5/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.15.5/firebase-database.js"></script>
+
+    <script>
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBUOt2x2cmVRJ2v09YUt1KkJMz3tjbPYsI",
+        authDomain: "solitest-94535.firebaseapp.com",
+        databaseURL: "https://solitest-94535.firebaseio.com",
+        projectId: "solitest-94535",
+        storageBucket: "solitest-94535.appspot.com",
+        messagingSenderId: "534383497565",
+        appId: "1:534383497565:web:ed9fedee813f2c75d3d8b4"
+      };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      const database = firebase.database();
+
+      const sendEvent = (type, data) => {
+        firebase
+          .database()
+          .ref(`events/${new Date().getTime()}`)
+          .set({
+            type: type,
+            data: data
+          });
+      };
+
+      let present = false;
+
+      //Welcome to the example sketch!
+      //You can find explanations in the comments, with instructions for how to alter the code yourself.
+      //The rest of the files in this app are just to set up this canvas. This file controls all of the interaction.
+      //This file uses p5.js, a library for making art. You can look up the documentation here: https://p5js.org/reference/ if there are terms you don't recognize. If you don't find it there, it's probably just regular Javascript. You can find its documentation here: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+      window.onSoliEvent = function(event) {
+        // this function will run any time a gesture is detected'
+        if (event.type == "tap") {
+          console.log("tap detected");
+          sendEvent(event.type, event.data);
+          t = 0; //start the ripple animation
+        }
+        if (event.type == "swipe") {
+          if (event.data.direction == "1") {
+            console.log("right swipe detected");
+            moveRight();
+            sendEvent(event.type, event.data);
+          } else if (event.data.direction == "5") {
+            console.log("left swipe detected");
+            moveLeft();
+            sendEvent(event.type, event.data);
+          }
+        }
+        if (event.type == "presence") {
+          if (!present && event.data.distance > 0) {
+            present = true;
+            sendEvent(event.type, event.data);
+          } else if (present && event.data.distance === 0) {
+            present = false;
+            sendEvent(event.type, event.data);
+          }
+        }
+        if (event.type == "reach") {
+          // do something
+        }
+      };
+
+      let radius = 200; //radius of the circle
+      let t = 300; //variable to keep track of the frame of the ripple animation
+      let position, speed, force; // variables to define the motion for swipe event interaction
+      let direction = 0; //1 for right, -1 for left
+
+      function setup() {
+        //When the page loads
+        createCanvas(window.innerWidth, window.innerHeight); //create a canvas for the game to display on.
+        position = width / 2; //put the circle in the middle of the screen
+        speed = 0;
+      }
+
+      function draw() {
+        // this is a loop that runs forever
+        noStroke();
+        fill(255, 255, 255); //This sets the drawing color to white. You can change this color to change the color of the circle
+        updateLocation();
+        background(0); // This sets the background color. Change the number here to change the background color.
+        ellipse(
+          //draw a circle. You can try rect(x,y,radius); for rectangles, or whole bunch of other shapes listed here under "Shape": https://p5js.org/reference/
+          position, // This sets the X coordinate. Here, it's a simple quadratic equation, centered on the screen.
+          height / 2, //This sets the y coordinate.
+          radius
+        ); //this sets the size of the ball
+        drawRipple();
+      }
+
+      function updateLocation() {
+        position += speed; // Move the circle based on its current speed
+        speed *= 0.9; // slow down the ball (by its spring constant)
+        speed += (width / 2 - position) * 0.1; // modify the speed of the ball based on how far away it is from the center (imagine a rubber band is attached to it)
+      }
+
+      function drawRipple() {
+        t += 10;
+        noFill();
+        strokeWeight(20);
+        stroke(255 - t);
+        ellipse(position, height / 2, radius + t);
+      }
+
+      function moveRight() {
+        speed = 30; //gives the circle velocity towards the right
+      }
+
+      function moveLeft() {
+        speed = -30; //gives the circle velocity towards the left
+      }
+
+      function windowResized() {
+        //this detects when the window is resized, such as entering fullscreen mode, or changing orientation of the device.
+        resizeCanvas(windowWidth, windowHeight); //resizes the canvas to the new dimensions
+      }
+
+      //This detects if the prototype is opened in Soli Sandbox, and sends an alert to the user that soli functionality will not work in other apps/browswe
+      if (!navigator.userAgent.includes("Soli Sandbox")) {
+        alert(
+          "This prototype needs to be opened in Soli Sandbox in order to receive Soli Events. Soli functionality will not work."
+        );
+      } else {
+        console.log("Soli Sandbox Detected");
+      }
+
+      //This defines all of p5.js' tools so that glitch recognizes them
+      /*global abs,angleMode,append,background,beginShape,bezier,box,camera,ceil,CENTER,color,cone,cos,createCanvas,createCanvas,createGraphics,curveVertex,cylinder,DEGREES,displayHeight,displayWidth,dist,div,DOWN_ARROW,ellipse,endShape,fill,floor,frameCount,frameRate,height,image,key,keyCode,keyIsDown,keyIsPressed,keyIsPressed,keyPressed,LEFT,LEFT_ARROW,lerpColor,line,loadImage,loadJSON,loadSound,map,mouseIsPressed,mouseX,mouseY,noFill,noLoop,normalMaterial,noStroke,p5,plane,point,pointLight,pop,push,push,RADIANS,radians,random,rect,resizeCanvas,resizeCanvas,RIGHT,RIGHT_ARROW,rotate,rotateX,rotateY,rotateZ,round,round,scale,shuffle,sin,sphere,stroke,strokeWeight,text,textAlign,textFont,textSize,texture,textWidth,torus,translate,triangle,UP_ARROW,WEBGL,width,windowHeight,windowHeight,windowWidth,world */
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body></body>
+</html>

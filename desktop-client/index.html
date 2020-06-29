@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soli Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script> <!--p5js version 1-->
+    <script src="https://www.gstatic.com/firebasejs/7.15.5/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.15.5/firebase-database.js"></script>
+    <script>
+       
+        let present = false;
+        let currentDogUrl;
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBUOt2x2cmVRJ2v09YUt1KkJMz3tjbPYsI",
+          authDomain: "solitest-94535.firebaseapp.com",
+          databaseURL: "https://solitest-94535.firebaseio.com",
+          projectId: "solitest-94535",
+          storageBucket: "solitest-94535.appspot.com",
+          messagingSenderId: "534383497565",
+          appId: "1:534383497565:web:ed9fedee813f2c75d3d8b4"
+        };
+          
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        const database = firebase.database();
+        const listenEvents = firebase.database().ref('events/');
+        listenEvents.endAt().limitToLast(1).on('child_added', (snapshot) => {
+            handleEvent(snapshot.val());
+        });
+        
+        const handleEvent = (event) => {
+
+            switch(event.type) {
+
+                case "presence":
+                    handlePresence(event.data);
+                    break;
+
+                case "tap":
+                    console.log('tap');
+                    handleTap(event.data);
+                    break;
+                
+                case "swipe": 
+                    console.log('swipe');
+                    handleSwipe(event.data);
+                    break;
+            }
+        }
+
+        const handleSwipe = (eventData) => {
+            if(eventData.direction == '1') { //right
+                createDogElementFromCurrent(eventData.direction);
+               
+            } else if (eventData.direction == '5') { //left
+                createDogElementFromCurrent(eventData.direction);
+            }
+        }
+
+        const handlePresence = (eventData) => {
+            if(!present && eventData.distance > 0) {
+                present = true;
+                document.getElementById('eventDisplay').innerText = 'User is present';
+            } else if(present && eventData.distance === 0){
+                present = false;
+                document.getElementById('eventDisplay').innerText = 'User is away';
+            }
+        }
+
+        const handleTap = (eventData) => {
+            //document.getElementById('eventDisplay').innerText = 'Tap';
+            fetch('https://dog.ceo/api/breeds/image/random')
+                .then(response => response.json())
+                .then(data => {
+                        currentDogUrl = data.message;
+                        document.getElementById('dogDisplay').src = data.message;
+                    });
+       
+
+        }
+
+        const createDogElementFromCurrent = (side) => {
+            if(currentDogUrl != undefined) {
+                const dog = document.createElement('img');
+                dog.src = currentDogUrl;
+                dog.height = '100';
+                document.getElementById(side === 1 ? 'dogsRight' : 'dogsLeft').appendChild(dog);
+            }
+        }
+
+      
+        
+    </script>
+</head>
+<body>
+    <div style="display: flex;">
+            <img id='dogDisplay' style="width: 25%;
+                                        max-width: 400px;
+                                        height: auto;
+                                        position: absolute;
+                                        left: 50%;
+                                        top: 50%;
+                                        transform: translate(-50%, -50%); z-index: 999;">
+        </div>
+    </div>
+    <div id='dogsLeft' style="width: 25%;
+                                height: 100%;
+                                position: absolute;
+                                left: 0;
+                                top: 0;
+                                background: none;"> </div>
+    <div id='dogsRight' style="width: 25%;
+        height: 100%;
+        position: absolute;
+        right: 0;
+        top: 0;
+        background: none;
+        text-align: end;"></div>
+</body>
+</html>
